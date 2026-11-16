@@ -1,0 +1,62 @@
+name: Build ReTube APK
+
+on:
+  push:
+    branches: [ main, retube-branding-actions ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: retube-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (including required submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Set up Android SDK tools
+        uses: android-actions/setup-android@v3
+        with:
+          # Avoid v3's obsolete default "tools" package and its single-string package handling.
+          packages: ''
+
+      - name: Install required Android SDK packages
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-37.0" "build-tools;37.0.0"
+
+      - name: Build ReTube APKs
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :mobile:assembleStmobileDebug
+
+      - name: Collect APKs
+        run: |
+          mkdir -p dist
+          find mobile/build/outputs -type f -name '*.apk' -print0 | xargs -0 -r cp -t dist/
+          test -n "$(find dist -maxdepth 1 -name '*.apk' -print -quit)"
+          ls -lh dist
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReTube-APK-${{ github.run_number }}
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 30
