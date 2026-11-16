@@ -49,7 +49,7 @@ jobs:
       - name: Collect APKs
         run: |
           mkdir -p dist
-          find mobile/build/outputs -type f -name '*.apk' -exec cp {} dist/ +
+          find mobile/build/outputs -type f -name '*.apk' -print0 | xargs -0 -r cp -t dist/
           test -n "$(find dist -maxdepth 1 -name '*.apk' -print -quit)"
           ls -lh dist
 
