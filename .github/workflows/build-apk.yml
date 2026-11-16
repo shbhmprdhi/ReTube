@@ -31,13 +31,15 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Set up Android SDK
+      - name: Set up Android SDK tools
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platform-tools
-            platforms;android-37
-            build-tools;37.0.0
+          # Avoid v3's obsolete default "tools" package and its single-string package handling.
+          packages: ''
+
+      - name: Install required Android SDK packages
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-37" "build-tools;37.0.0"
 
       - name: Build ReTube APKs
         run: |
